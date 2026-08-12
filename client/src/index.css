@@ -5,7 +5,8 @@
    Smart Resume Builder - Luminous Dark Design System
    ============================================ */
 
-:root {
+:root,
+:root[data-theme="dark"] {
   --bg-base: #0b1326;
   --bg-surface: #131b2e;
   --bg-surface-elevated: #171f33;
@@ -18,6 +19,88 @@
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg-base: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #f1f5f9;
+  --bg-surface-high: #e2e8f0;
+  --border-subtle: #e2e8f0;
+  --border-focus: #7c3aed;
+  --primary-violet: #7c3aed;
+  --primary-glow: #7c3aed;
+  --emerald-accent: #10b981;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  color-scheme: light;
+}
+
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .profile-section-block,
+:root[data-theme="light"] .admin-stat-card,
+:root[data-theme="light"] .admin-table-container,
+:root[data-theme="light"] .modal-content {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06) !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .input-field,
+:root[data-theme="light"] .textarea-field,
+:root[data-theme="light"] .admin-search-input,
+:root[data-theme="light"] .chip-input-container {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .input-field:focus,
+:root[data-theme="light"] .textarea-field:focus {
+  background: #ffffff !important;
+}
+
+:root[data-theme="light"] .heading-xl,
+:root[data-theme="light"] .heading-lg,
+:root[data-theme="light"] .heading-md,
+:root[data-theme="light"] .heading-sm,
+:root[data-theme="light"] .admin-stat-value,
+:root[data-theme="light"] .section-title {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .page-bg {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .navbar,
+:root[data-theme="light"] .landing-nav {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .navbar-title {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .admin-table th {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .admin-table td {
+  color: #334155 !important;
+  border-bottom-color: #f1f5f9 !important;
+}
+
+:root[data-theme="light"] .profile-entry-card,
+:root[data-theme="light"] .resume-section-card {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
 }
 
 * {
@@ -28,7 +111,6 @@
 
 html {
   scroll-behavior: smooth;
-  color-scheme: dark;
 }
 
 body {

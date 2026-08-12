@@ -14,6 +14,13 @@ import {
   deleteAdminUser,
 } from '../../services/adminService.js';
 import {
+  getAdminAllTemplates,
+  approveTemplate as approveTemplateService,
+  rejectTemplate as rejectTemplateService,
+  createOfficialTemplate as createOfficialTemplateService,
+  deleteTemplate as deleteTemplateService,
+} from '../../services/templateService.js';
+import {
   HiUsers,
   HiDocumentText,
   HiSparkles,
@@ -32,16 +39,33 @@ import {
   HiEnvelope,
   HiLockClosed,
   HiKey,
+  HiPaintBrush,
+  HiCheckBadge,
+  HiPlus,
+  HiDocumentArrowUp,
 } from 'react-icons/hi2';
 import TEMPLATES from '../../constants/templates.js';
 
 function AdminPage() {
   const { user, login } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'users' | 'resumes'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'users' | 'resumes' | 'templates'
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [resumes, setResumes] = useState([]);
+  const [adminTemplates, setAdminTemplates] = useState([]);
+  const [templateStatusFilter, setTemplateStatusFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Admin Create Official Template Modal
+  const [showAddTemplateModal, setShowAddTemplateModal] = useState(false);
+  const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
+  const [officialName, setOfficialName] = useState('');
+  const [officialCategory, setOfficialCategory] = useState('Tech');
+  const [officialDesc, setOfficialDesc] = useState('');
+  const [officialPrimaryColor, setOfficialPrimaryColor] = useState('#7c3aed');
+  const [officialAccentColor, setOfficialAccentColor] = useState('#9333ea');
+  const [officialFile, setOfficialFile] = useState(null);
+  const [officialTags, setOfficialTags] = useState('');
 
   // Admin Login State for Security Gate
   const [adminEmailInput, setAdminEmailInput] = useState('sanketbhende0@gmail.com');
@@ -95,19 +119,88 @@ function AdminPage() {
   const loadAllAdminData = async () => {
     setIsLoading(true);
     try {
-      const [statsData, usersData, resumesData] = await Promise.all([
+      const [statsData, usersData, resumesData, templatesData] = await Promise.all([
         getAdminStats(),
         getAdminUsers(),
         getAdminResumes(),
+        getAdminAllTemplates().catch(() => []),
       ]);
       setStats(statsData);
       setUsers(usersData.data || []);
       setResumes(resumesData.data || []);
+      setAdminTemplates(templatesData || []);
     } catch (error) {
       console.error('Failed to load admin data:', error);
       toast.error('Failed to load admin intelligence data');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Template Actions
+  const handleApproveTemplate = async (templateId) => {
+    try {
+      await approveTemplateService(templateId);
+      toast.success('✅ Template approved and published live!');
+      loadAllAdminData();
+    } catch (error) {
+      toast.error('Failed to approve template');
+    }
+  };
+
+  const handleRejectTemplate = async (templateId) => {
+    try {
+      await rejectTemplateService(templateId);
+      toast.success('Template unpublished/rejected');
+      loadAllAdminData();
+    } catch (error) {
+      toast.error('Failed to reject template');
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId) => {
+    if (!window.confirm('Delete this template permanently?')) return;
+    try {
+      await deleteTemplateService(templateId);
+      toast.success('Template deleted');
+      setAdminTemplates((prev) => prev.filter((t) => t._id !== templateId));
+    } catch (error) {
+      toast.error('Failed to delete template');
+    }
+  };
+
+  const handleCreateOfficialTemplate = async (e) => {
+    e.preventDefault();
+    if (!officialName.trim()) {
+      toast.error('Template name is required');
+      return;
+    }
+
+    setIsCreatingTemplate(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', officialName);
+      formData.append('category', officialCategory);
+      formData.append('description', officialDesc);
+      formData.append('primaryColor', officialPrimaryColor);
+      formData.append('accentColor', officialAccentColor);
+      formData.append('tags', officialTags);
+      if (officialFile) {
+        formData.append('file', officialFile);
+      }
+
+      await createOfficialTemplateService(formData);
+      toast.success('🎉 Official template created and made live on the site!');
+      setShowAddTemplateModal(false);
+      setOfficialName('');
+      setOfficialDesc('');
+      setOfficialFile(null);
+      setOfficialTags('');
+      loadAllAdminData();
+    } catch (error) {
+      toast.error('Failed to create official template');
+    } finally {
+      setIsCreatingTemplate(false);
     }
   };
 
@@ -422,6 +515,12 @@ function AdminPage() {
             className={`admin-tab ${activeTab === 'resumes' ? 'admin-tab-active' : ''}`}
           >
             <HiDocumentText /> Resumes Database ({resumes.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('templates')}
+            className={`admin-tab ${activeTab === 'templates' ? 'admin-tab-active' : ''}`}
+          >
+            <HiPaintBrush /> Custom Templates & Moderation ({adminTemplates.length})
           </button>
         </div>
 
@@ -816,6 +915,371 @@ function AdminPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: TEMPLATES & COMMUNITY MODERATION */}
+        {!isLoading && activeTab === 'templates' && (
+          <div className="card">
+            <div className="flex-between mb-md" style={{ flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <h2 className="heading-sm flex-row items-center gap-xs">
+                  <HiPaintBrush style={{ color: '#d2bbff' }} /> Custom & Official Template Moderation
+                </h2>
+                <p className="text-xs text-muted mt-xs">
+                  Review user uploaded design files, approve community submissions, or publish new official templates.
+                </p>
+              </div>
+
+              <div className="flex-row items-center gap-sm">
+                <div className="templates-category-pills">
+                  {['all', 'pending', 'approved', 'rejected'].map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => setTemplateStatusFilter(st)}
+                      className={`category-pill ${templateStatusFilter === st ? 'category-pill-active' : ''}`}
+                      style={{ textTransform: 'capitalize' }}
+                    >
+                      {st === 'approved' ? 'Live on Site' : st}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setShowAddTemplateModal(true)}
+                  className="btn btn-primary-gradient btn-sm"
+                >
+                  <HiPlus /> Add Official Template
+                </button>
+              </div>
+            </div>
+
+            <div className="admin-table-container">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Template</th>
+                    <th>Category</th>
+                    <th>Submitted By</th>
+                    <th>File & Layout</th>
+                    <th>Colors</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminTemplates
+                    .filter((t) =>
+                      templateStatusFilter === 'all'
+                        ? true
+                        : t.status === templateStatusFilter
+                    )
+                    .map((t) => (
+                      <tr key={t._id}>
+                        <td>
+                          <div className="flex-row items-center gap-sm">
+                            <div
+                              style={{
+                                width: '36px',
+                                height: '46px',
+                                borderRadius: '4px',
+                                background: t.colors?.primary || '#7c3aed',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#ffffff',
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                              }}
+                            >
+                              {t.name?.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-white flex-row items-center gap-xs">
+                                {t.name}
+                                {t.isOfficial && (
+                                  <span className="admin-badge admin-badge-official" style={{ fontSize: '10px', padding: '2px 6px', background: 'rgba(124,58,237,0.3)', color: '#d2bbff', borderRadius: '4px' }}>
+                                    Official
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted">{t.description || 'No description'}</div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td>
+                          <span className="badge badge-gray">{t.category}</span>
+                        </td>
+
+                        <td>
+                          {t.submittedBy ? (
+                            <div>
+                              <div className="text-sm font-medium text-white">{t.submittedBy.name}</div>
+                              <div className="text-xs text-muted">{t.submittedBy.email}</div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted">System Admin</span>
+                          )}
+                        </td>
+
+                        <td>
+                          <div>
+                            <span className="text-xs font-semibold text-purple" style={{ textTransform: 'uppercase' }}>
+                              {t.fileType || 'PDF'}
+                            </span>
+                            {t.fileUrl && (
+                              <div className="mt-xs">
+                                <a
+                                  href={t.fileUrl}
+                                  download={`${t.name}-template.${t.fileType || 'pdf'}`}
+                                  className="text-xs text-blue hover:underline"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  ⬇ Download Attachment
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        <td>
+                          <div className="flex-row items-center gap-xs">
+                            <div
+                              style={{
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '50%',
+                                background: t.colors?.primary || '#7c3aed',
+                              }}
+                              title={`Primary: ${t.colors?.primary}`}
+                            />
+                            <div
+                              style={{
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '50%',
+                                background: t.colors?.accent || '#9333ea',
+                              }}
+                              title={`Accent: ${t.colors?.accent}`}
+                            />
+                          </div>
+                        </td>
+
+                        <td>
+                          {t.status === 'approved' && t.isLive ? (
+                            <span className="admin-badge admin-badge-active flex-row items-center gap-xs">
+                              <HiCheckBadge /> Live on Site
+                            </span>
+                          ) : t.status === 'pending' ? (
+                            <span className="admin-badge admin-badge-pending">
+                              Pending Review
+                            </span>
+                          ) : (
+                            <span className="admin-badge admin-badge-deleted">
+                              Rejected
+                            </span>
+                          )}
+                        </td>
+
+                        <td>
+                          <div className="flex-row items-center gap-xs">
+                            {t.status !== 'approved' ? (
+                              <button
+                                onClick={() => handleApproveTemplate(t._id)}
+                                className="btn btn-outline btn-xs"
+                                style={{ borderColor: '#10b981', color: '#10b981' }}
+                                title="Approve & Make Live on Site"
+                              >
+                                ✅ Make Live
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleRejectTemplate(t._id)}
+                                className="btn btn-outline btn-xs"
+                                style={{ borderColor: '#f59e0b', color: '#f59e0b' }}
+                                title="Unpublish / Reject"
+                              >
+                                Unpublish
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => handleDeleteTemplate(t._id)}
+                              className="btn-icon-sm btn-danger"
+                              title="Delete Template"
+                            >
+                              <HiTrash style={{ fontSize: '14px' }} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+
+                  {adminTemplates.length === 0 && (
+                    <tr>
+                      <td colSpan="7" className="text-center text-muted" style={{ padding: '40px' }}>
+                        No uploaded custom templates yet. Users can upload custom templates from the Template Gallery.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 0: ADMIN CREATE OFFICIAL TEMPLATE MODAL */}
+        {showAddTemplateModal && (
+          <div className="modal-overlay" onClick={() => setShowAddTemplateModal(false)}>
+            <div
+              className="modal-content"
+              style={{ maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex-between mb-md">
+                <div>
+                  <h2 className="heading-md">Add Official Resume Template</h2>
+                  <p className="text-xs text-muted mt-xs">
+                    Create and publish a brand-new official template directly to the platform.
+                  </p>
+                </div>
+                <button onClick={() => setShowAddTemplateModal(false)} className="btn-icon btn-ghost">
+                  <HiXMark style={{ fontSize: '20px' }} />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateOfficialTemplate}>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="label-text">Template Name *</label>
+                    <input
+                      type="text"
+                      value={officialName}
+                      onChange={(e) => setOfficialName(e.target.value)}
+                      placeholder="e.g. Wall Street Executive"
+                      className="input-field"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label-text">Category</label>
+                    <select
+                      value={officialCategory}
+                      onChange={(e) => setOfficialCategory(e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="Tech">Tech & Engineering</option>
+                      <option value="Executive">Executive & Leadership</option>
+                      <option value="Creative">Creative & Design</option>
+                      <option value="Academic">Academic & Legal</option>
+                      <option value="Minimalist">Minimalist</option>
+                      <option value="General">General Purpose</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="label-text">Description</label>
+                  <textarea
+                    rows={2}
+                    value={officialDesc}
+                    onChange={(e) => setOfficialDesc(e.target.value)}
+                    placeholder="Short summary of this template layout..."
+                    className="textarea-field"
+                    style={{ minHeight: '65px' }}
+                  />
+                </div>
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="label-text">Primary Color</label>
+                    <div className="flex-row items-center gap-sm">
+                      <input
+                        type="color"
+                        value={officialPrimaryColor}
+                        onChange={(e) => setOfficialPrimaryColor(e.target.value)}
+                        style={{ width: '44px', height: '40px', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}
+                      />
+                      <input
+                        type="text"
+                        value={officialPrimaryColor}
+                        onChange={(e) => setOfficialPrimaryColor(e.target.value)}
+                        className="input-field"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label-text">Accent Color</label>
+                    <div className="flex-row items-center gap-sm">
+                      <input
+                        type="color"
+                        value={officialAccentColor}
+                        onChange={(e) => setOfficialAccentColor(e.target.value)}
+                        style={{ width: '44px', height: '40px', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}
+                      />
+                      <input
+                        type="text"
+                        value={officialAccentColor}
+                        onChange={(e) => setOfficialAccentColor(e.target.value)}
+                        className="input-field"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="label-text">Template Design File (Word DOCX, PDF, JSON)</label>
+                  <div className="file-dropzone-box" onClick={() => document.getElementById('officialFileInput').click()}>
+                    <HiDocumentArrowUp style={{ fontSize: '36px', color: '#d2bbff', margin: '0 auto 8px' }} />
+                    <p className="text-sm font-semibold text-white">
+                      {officialFile ? officialFile.name : 'Click to select template file (.docx, .pdf, .json)'}
+                    </p>
+                    <input
+                      id="officialFileInput"
+                      type="file"
+                      accept=".pdf,.docx,.doc,.json"
+                      onChange={(e) => setOfficialFile(e.target.files[0])}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="label-text">Tags (comma separated)</label>
+                  <input
+                    type="text"
+                    value={officialTags}
+                    onChange={(e) => setOfficialTags(e.target.value)}
+                    placeholder="e.g. executive, gold, finance, wall street"
+                    className="input-field"
+                  />
+                </div>
+
+                <div className="flex-row gap-sm mt-lg">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddTemplateModal(false)}
+                    className="btn btn-outline"
+                    style={{ flex: 1 }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreatingTemplate}
+                    className="btn btn-primary-gradient"
+                    style={{ flex: 1 }}
+                  >
+                    {isCreatingTemplate ? 'Publishing...' : 'Publish Official Template'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

@@ -1,15 +1,18 @@
-// ============================================
-// Navbar.jsx - Top Navigation Bar
-// ============================================
-
 import './index.css';
 import { useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
-import { HiArrowRightOnRectangle, HiDocumentText } from 'react-icons/hi2';
+import ThemeContext from '../../context/ThemeContext.jsx';
+import {
+  HiArrowRightOnRectangle,
+  HiDocumentText,
+  HiSun,
+  HiMoon,
+} from 'react-icons/hi2';
 
 function Navbar({ title, showBack = false }) {
   const { user, logout } = useContext(AuthContext);
+  const { theme, toggleTheme, isDark } = useContext(ThemeContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -74,6 +77,16 @@ function Navbar({ title, showBack = false }) {
       </div>
 
       <div className="flex-row items-center gap-md">
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          className="btn-icon btn-ghost"
+          title={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
+          style={{ fontSize: '18px' }}
+        >
+          {isDark ? <HiSun style={{ color: '#fbbf24' }} /> : <HiMoon style={{ color: '#6366f1' }} />}
+        </button>
+
         {user && (
           <>
             <Link
