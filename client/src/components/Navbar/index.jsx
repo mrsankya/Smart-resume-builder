@@ -55,6 +55,12 @@ function Navbar({ title, showBack = false }) {
                 >
                   Dashboard
                 </Link>
+                <Link
+                  to="/profile"
+                  className={`nav-link ${location.pathname === '/profile' ? 'nav-link-active' : ''}`}
+                >
+                  Profile
+                </Link>
               </div>
             )}
           </>
@@ -70,7 +76,12 @@ function Navbar({ title, showBack = false }) {
       <div className="flex-row items-center gap-md">
         {user && (
           <>
-            <div className="flex-row items-center gap-sm">
+            <Link
+              to="/profile"
+              className="flex-row items-center gap-sm"
+              style={{ textDecoration: 'none', cursor: 'pointer' }}
+              title="View & Edit Profile"
+            >
               {user.picture ? (
                 <img src={user.picture} alt={user.name} className="user-avatar" />
               ) : (
@@ -79,7 +90,7 @@ function Navbar({ title, showBack = false }) {
                 </div>
               )}
               <span className="text-muted hide-mobile">{user.name}</span>
-            </div>
+            </Link>
             <button onClick={handleLogout} className="logout-btn" title="Logout">
               <HiArrowRightOnRectangle />
             </button>

@@ -4,6 +4,7 @@
 
 import { Router } from 'express';
 import authenticate from '../middleware/auth.middleware.js';
+import requireAdmin from '../middleware/admin.middleware.js';
 import {
   getAdminStats,
   getAdminUsers,
@@ -16,8 +17,8 @@ import {
 
 const router = Router();
 
-// Protect all admin endpoints with authentication
-router.use(authenticate);
+// Protect all admin endpoints with authentication and admin email verification
+router.use(authenticate, requireAdmin);
 
 router.get('/stats', getAdminStats);
 router.get('/users', getAdminUsers);

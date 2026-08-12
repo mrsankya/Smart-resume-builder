@@ -67,6 +67,24 @@ export const getMe = async (req, res, next) => {
   }
 };
 
+export const getProfile = async (req, res, next) => {
+  try {
+    const user = await authService.getUserProfile(req.user._id);
+    return res.json({ success: true, data: user.profile || {} });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateProfile = async (req, res, next) => {
+  try {
+    const result = await authService.updateUserProfile(req.user._id, req.body);
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const logout = async (req, res, next) => {
   try {
     return res.json({ success: true, data: { message: 'Logged out successfully' } });

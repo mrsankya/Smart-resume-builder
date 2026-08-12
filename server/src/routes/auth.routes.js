@@ -3,7 +3,15 @@
 // ============================================
 
 import { Router } from 'express';
-import { registerUser, loginUser, googleAuth, getMe, logout } from '../controllers/auth.controller.js';
+import {
+  registerUser,
+  loginUser,
+  googleAuth,
+  getMe,
+  getProfile,
+  updateProfile,
+  logout,
+} from '../controllers/auth.controller.js';
 import authenticate from '../middleware/auth.middleware.js';
 
 const router = Router();
@@ -15,6 +23,8 @@ router.post('/google', googleAuth);
 
 // Protected routes — auth middleware applied (Express.js: Auth Middleware)
 router.get('/me', authenticate, getMe);
+router.get('/profile', authenticate, getProfile);
+router.put('/profile', authenticate, updateProfile);
 router.post('/logout', authenticate, logout);
 
 export default router;

@@ -1,10 +1,8 @@
-// ============================================
-// AdminPage.jsx - Admin Platform Intelligence & User/Resume Details
-// ============================================
-
 import './index.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import Navbar from '../../components/Navbar';
+import { AuthContext } from '../../context/AuthContext.jsx';
+import { emailLogin as loginService } from '../../services/authService.js';
 import toast from 'react-hot-toast';
 import {
   getAdminStats,
@@ -32,15 +30,23 @@ import {
   HiWrenchScrewdriver,
   HiBriefcase,
   HiEnvelope,
+  HiLockClosed,
+  HiKey,
 } from 'react-icons/hi2';
 import TEMPLATES from '../../constants/templates.js';
 
 function AdminPage() {
+  const { user, login } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'users' | 'resumes'
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [resumes, setResumes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Admin Login State for Security Gate
+  const [adminEmailInput, setAdminEmailInput] = useState('sanketbhende0@gmail.com');
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [isAdminLoggingIn, setIsAdminLoggingIn] = useState(false);
 
   // Search queries
   const [userSearch, setUserSearch] = useState('');
@@ -55,9 +61,36 @@ function AdminPage() {
   const [inspectResume, setInspectResume] = useState(null);
   const [isLoadingInspect, setIsLoadingInspect] = useState(false);
 
+  const isAdmin = user?.email?.toLowerCase() === 'sanketbhende0@gmail.com';
+
   useEffect(() => {
-    loadAllAdminData();
-  }, []);
+    if (isAdmin) {
+      loadAllAdminData();
+    } else {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  const handleAdminLogin = async (e) => {
+    e.preventDefault();
+    if (!adminPasswordInput) {
+      toast.error('Please enter the admin password');
+      return;
+    }
+
+    setIsAdminLoggingIn(true);
+    try {
+      const res = await loginService(adminEmailInput, adminPasswordInput);
+      login(res.token, res.user);
+      toast.success('👑 Welcome back, Sanket! Administrator access granted.');
+      loadAllAdminData();
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || 'Invalid admin credentials');
+    } finally {
+      setIsAdminLoggingIn(false);
+    }
+  };
 
   const loadAllAdminData = async () => {
     setIsLoading(true);
@@ -220,6 +253,77 @@ function AdminPage() {
   };
 
   const getTemplate = (id) => TEMPLATES.find((t) => t.id === id) || TEMPLATES[0];
+
+  if (!isAdmin) {
+    return (
+      <div className="page-bg min-h-screen">
+        <Navbar />
+        <div className="flex-center" style={{ minHeight: 'calc(100vh - 120px)', padding: '24px' }}>
+          <div
+            className="card animate-fade-in"
+            style={{
+              maxWidth: '460px',
+              width: '100%',
+              padding: '36px',
+              textAlign: 'center',
+              borderTop: '4px solid #7c3aed',
+            }}
+          >
+            <div className="icon-circle icon-circle-purple mb-md" style={{ margin: '0 auto 16px' }}>
+              <HiLockClosed style={{ fontSize: '26px' }} />
+            </div>
+            <h2 className="heading-md mb-xs">Admin Access Required</h2>
+            <p className="text-muted text-sm mb-lg">
+              This area is restricted to system administrators. Please authenticate with administrator credentials to continue.
+            </p>
+
+            <form onSubmit={handleAdminLogin}>
+              <div className="form-group text-left">
+                <label className="label-text">Admin Email</label>
+                <input
+                  type="email"
+                  value={adminEmailInput}
+                  onChange={(e) => setAdminEmailInput(e.target.value)}
+                  className="input-field"
+                  placeholder="sanketbhende0@gmail.com"
+                  required
+                />
+              </div>
+
+              <div className="form-group text-left">
+                <label className="label-text">Admin Password</label>
+                <input
+                  type="password"
+                  value={adminPasswordInput}
+                  onChange={(e) => setAdminPasswordInput(e.target.value)}
+                  className="input-field"
+                  placeholder="Enter admin password"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isAdminLoggingIn}
+                className="btn btn-primary-gradient btn-full mt-md"
+              >
+                {isAdminLoggingIn ? (
+                  <>
+                    <div className="spinner spinner-sm" /> Verifying...
+                  </>
+                ) : (
+                  <>
+                    <HiKey /> Unlock Command Center
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-bg min-h-screen">

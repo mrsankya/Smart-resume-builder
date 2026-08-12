@@ -94,7 +94,7 @@ export const googleLogin = async (credential) => {
 };
 
 export const getUserProfile = async (userId) => {
-  const user = await User.findById(userId).select('-__v -googleId');
+  const user = await User.findById(userId).select('-__v -googleId -password');
 
   if (!user) {
     throw new Error('User not found');
@@ -105,6 +105,36 @@ export const getUserProfile = async (userId) => {
     email: user.email,
     name: user.name,
     picture: user.picture,
+    profile: user.profile || {},
+    createdAt: user.createdAt,
+    lastLogin: user.lastLogin,
+  };
+};
+
+export const updateUserProfile = async (userId, profileData) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  if (profileData.name) {
+    user.name = profileData.name;
+  }
+
+  user.profile = {
+    ...user.profile,
+    ...profileData,
+  };
+
+  await user.save();
+
+  return {
+    id: user._id,
+    email: user.email,
+    name: user.name,
+    picture: user.picture,
+    profile: user.profile,
     createdAt: user.createdAt,
     lastLogin: user.lastLogin,
   };
