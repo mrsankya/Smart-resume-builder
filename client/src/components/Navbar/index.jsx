@@ -55,6 +55,12 @@ function Navbar({ title, showBack = false }) {
                 >
                   Dashboard
                 </Link>
+                <Link
+                  to="/admin"
+                  className={`nav-link ${location.pathname === '/admin' ? 'nav-link-active' : ''}`}
+                >
+                  Admin Panel
+                </Link>
               </div>
             )}
           </>
