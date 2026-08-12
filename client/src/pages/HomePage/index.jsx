@@ -16,6 +16,7 @@ import ModernTemplate from '../../components/templates/ModernTemplate.jsx';
 import CreativeTemplate from '../../components/templates/CreativeTemplate.jsx';
 import MinimalTemplate from '../../components/templates/MinimalTemplate.jsx';
 import ExecutiveTemplate from '../../components/templates/ExecutiveTemplate.jsx';
+import CreateResumeModal from '../../components/CreateResumeModal';
 import { HiDocumentPlus, HiArrowUpTray, HiChartBar, HiArrowRight, HiClock, HiDocumentText, HiXMark } from 'react-icons/hi2';
 
 const TEMPLATE_COMPONENTS = {
@@ -24,6 +25,16 @@ const TEMPLATE_COMPONENTS = {
   creative: CreativeTemplate,
   minimal: MinimalTemplate,
   executive: ExecutiveTemplate,
+  'tech-minimal': ModernTemplate,
+  'nordic-clean': MinimalTemplate,
+  'ivy-league': ClassicTemplate,
+  'compact-grid': ModernTemplate,
+  'infographic-slate': CreativeTemplate,
+  'corporate-gold': ExecutiveTemplate,
+  'canva-pro-gradient': CreativeTemplate,
+  'canva-minimal-tech': ModernTemplate,
+  'canva-creative-portfolio': CreativeTemplate,
+  'canva-executive-prestige': ExecutiveTemplate,
 };
 
 function HomePage() {
@@ -34,9 +45,7 @@ function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
   const [newTemplate, setNewTemplate] = useState('classic');
-  const [newTargetRole, setNewTargetRole] = useState('');
   const [uploadFile, setUploadFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState(null);
@@ -53,21 +62,6 @@ function HomePage() {
       toast.error('Failed to load resumes');
     }
     setIsLoading(false);
-  };
-
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    try {
-      const resume = await createResume({
-        title: newTitle || 'Untitled Resume',
-        templateId: newTemplate,
-        targetRole: newTargetRole,
-      });
-      toast.success('Resume created!');
-      navigate(`/builder/${resume._id}`);
-    } catch (error) {
-      toast.error('Failed to create resume');
-    }
   };
 
   const handleUpload = async () => {
@@ -245,61 +239,11 @@ function HomePage() {
         })()}
 
         {/* Create Modal */}
-        {showCreate && (
-          <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }}>
-              <h2 className="heading-md mb-lg">Create New Resume</h2>
-              <form onSubmit={handleCreate}>
-                <div className="form-group">
-                  <label className="label-text">Resume Title</label>
-                  <input
-                    type="text"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    className="input-field"
-                    placeholder="e.g., Software Engineer Resume"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="label-text">Target Role</label>
-                  <input
-                    type="text"
-                    value={newTargetRole}
-                    onChange={(e) => setNewTargetRole(e.target.value)}
-                    className="input-field"
-                    placeholder="e.g., Frontend Developer"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="label-text">Template</label>
-                  <div className="template-grid-modal" style={{ marginTop: '8px' }}>
-                    {TEMPLATES.map((tmpl) => (
-                      <TemplateCard
-                        key={tmpl.id}
-                        template={tmpl}
-                        isActive={newTemplate === tmpl.id}
-                        onSelect={() => setNewTemplate(tmpl.id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div className="flex-row gap-sm" style={{ paddingTop: '16px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowCreate(false)}
-                    className="btn btn-outline"
-                    style={{ flex: 1 }}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary-gradient" style={{ flex: 1 }}>
-                    Create Resume
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        <CreateResumeModal
+          isOpen={showCreate}
+          onClose={() => setShowCreate(false)}
+          initialTemplateId={newTemplate}
+        />
 
         {/* Upload Modal */}
         {showUpload && (

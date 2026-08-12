@@ -21,6 +21,7 @@ import ModernTemplate from '../../components/templates/ModernTemplate.jsx';
 import CreativeTemplate from '../../components/templates/CreativeTemplate.jsx';
 import MinimalTemplate from '../../components/templates/MinimalTemplate.jsx';
 import ExecutiveTemplate from '../../components/templates/ExecutiveTemplate.jsx';
+import CreateResumeModal from '../../components/CreateResumeModal';
 import {
   HiXMark,
   HiPlus,
@@ -45,9 +46,13 @@ const TEMPLATE_COMPONENTS = {
   'compact-grid': ModernTemplate,
   'infographic-slate': CreativeTemplate,
   'corporate-gold': ExecutiveTemplate,
+  'canva-pro-gradient': CreativeTemplate,
+  'canva-minimal-tech': ModernTemplate,
+  'canva-creative-portfolio': CreativeTemplate,
+  'canva-executive-prestige': ExecutiveTemplate,
 };
 
-const CATEGORIES = ['All', 'Professional', 'Modern', 'Creative', 'Minimal', 'Executive', 'Community Uploads'];
+const CATEGORIES = ['All', '🎨 Canva Designs', 'Professional', 'Modern', 'Creative', 'Minimal', 'Executive', 'Community Uploads'];
 
 function TemplatesPage() {
   const navigate = useNavigate();
@@ -254,6 +259,7 @@ function TemplatesPage() {
     const matchesCategory =
       activeCategory === 'All' ||
       (activeCategory === 'Community Uploads' && tmpl.isCustom) ||
+      (activeCategory === '🎨 Canva Designs' && (tmpl.category === 'canva' || tmpl.isCanva)) ||
       tmpl.category?.toLowerCase() === activeCategory.toLowerCase();
 
     const matchesSearch =
@@ -442,72 +448,11 @@ function TemplatesPage() {
       })()}
 
       {/* MODAL 2: CREATE RESUME MODAL */}
-      {showCreate && (
-        <div className="modal-overlay" onClick={() => setShowCreate(false)}>
-          <div
-            className="modal-content"
-            style={{ maxWidth: '500px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex-between mb-md">
-              <h2 className="heading-md">Create New Resume</h2>
-              <button onClick={() => setShowCreate(false)} className="btn-icon btn-ghost">
-                <HiXMark style={{ fontSize: '20px' }} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreate}>
-              <div className="form-group">
-                <label className="label-text">Resume Title</label>
-                <input
-                  type="text"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="input-field"
-                  placeholder="e.g. Senior Software Engineer 2026"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="label-text">Target Job Role</label>
-                <input
-                  type="text"
-                  value={newTargetRole}
-                  onChange={(e) => setNewTargetRole(e.target.value)}
-                  className="input-field"
-                  placeholder="e.g. Full Stack Developer"
-                />
-              </div>
-
-              <div className="p-sm mb-md rounded-md" style={{ background: '#171f33', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <span className="text-xs text-muted">Selected Template:</span>
-                <div className="font-semibold text-purple mt-xs">
-                  {allTemplates.find((t) => t.id === newTemplate)?.name}
-                </div>
-              </div>
-
-              <div className="flex-row gap-sm mt-lg">
-                <button
-                  type="button"
-                  onClick={() => setShowCreate(false)}
-                  className="btn btn-outline"
-                  style={{ flex: 1 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary-gradient"
-                  style={{ flex: 1 }}
-                >
-                  Start Building
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CreateResumeModal
+        isOpen={showCreate}
+        onClose={() => setShowCreate(false)}
+        initialTemplateId={newTemplate}
+      />
 
       {/* MODAL 3: UPLOAD CUSTOM TEMPLATE MODAL */}
       {showUploadModal && (
