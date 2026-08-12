@@ -49,3 +49,10 @@ client/android/local.properties
 *.rar
 *.zip
 *.tar.gz
+
+# Local launcher scripts & tunnel configs (Visible only on local machine)
+start_*.bat
+*.cmd
+run_*.ps1
+tunnel.js
+tunnel_urls.json
