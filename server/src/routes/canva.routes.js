@@ -3,7 +3,7 @@
 // ============================================
 
 import { Router } from 'express';
-import authenticate from '../middleware/auth.middleware.js';
+import authenticate, { optionalAuth } from '../middleware/auth.middleware.js';
 import {
   getCanvaAuthUrl,
   handleCanvaCallback,
@@ -16,9 +16,11 @@ const router = Router();
 // OAuth callback from Canva (No JWT required since browser redirects)
 router.get('/callback', handleCanvaCallback);
 
+// Authorization URL can be fetched by guest or logged in user
+router.get('/auth-url', optionalAuth, getCanvaAuthUrl);
+
 // Authenticated Endpoints
-router.get('/auth-url', authenticate, getCanvaAuthUrl);
-router.get('/designs', authenticate, getCanvaDesigns);
+router.get('/designs', optionalAuth, getCanvaDesigns);
 router.post('/import', authenticate, importCanvaDesign);
 
 export default router;

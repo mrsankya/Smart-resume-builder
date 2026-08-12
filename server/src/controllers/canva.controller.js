@@ -19,7 +19,8 @@ const userCanvaTokens = new Map();
 export const getCanvaAuthUrl = async (req, res) => {
   try {
     const { redirectUri } = req.query;
-    const authData = getCanvaAuthorizationUrl(req.user._id, redirectUri);
+    const userId = req.user?._id || 'guest';
+    const authData = getCanvaAuthorizationUrl(userId, redirectUri);
 
     return res.status(200).json({
       success: true,
@@ -30,7 +31,7 @@ export const getCanvaAuthUrl = async (req, res) => {
     console.error('Error generating Canva auth URL:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to generate Canva authorization URL',
+      message: error.message || 'Failed to generate Canva authorization URL',
       error: error.message,
     });
   }

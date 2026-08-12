@@ -131,11 +131,14 @@ function TemplatesPage() {
   const handleConnectCanva = async () => {
     try {
       const res = await getCanvaAuthUrl();
-      if (res.url) {
+      if (res?.url) {
         window.location.href = res.url;
+      } else {
+        toast.error('No authorization URL returned from server.');
       }
     } catch (err) {
-      toast.error('Failed to initialize Canva connection. Please ensure Canva Client ID is set.');
+      console.error('Canva connection error:', err);
+      toast.error(err.response?.data?.message || err.message || 'Failed to initialize Canva connection.');
     }
   };
 
