@@ -1,6 +1,6 @@
 import './App.css';
 import { useContext } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthContext } from './context/AuthContext.jsx';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -30,6 +30,26 @@ function PublicRoute({ children }) {
   if (user) return <Navigate to="/home" />;
 
   return children;
+}
+
+function GuestOrProtectedRoute({ children }) {
+  const { user, loading } = useContext(AuthContext);
+  const { id } = useParams();
+
+  if (loading) {
+    return (
+      <div className="page-bg flex-center min-h-screen">
+        <div className="flex-col items-center gap-sm">
+          <div className="spinner" />
+          <p className="text-muted">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (id === 'guest-draft' || user) return children;
+
+  return <Navigate to="/login" />;
 }
 
 function App() {
@@ -94,9 +114,9 @@ function App() {
       <Route
         path="/builder/:id"
         element={
-          <ProtectedRoute>
+          <GuestOrProtectedRoute>
             <BuilderPage />
-          </ProtectedRoute>
+          </GuestOrProtectedRoute>
         }
       />
       <Route

@@ -44,10 +44,36 @@ function ResumePreview() {
     return () => window.removeEventListener('resize', updateScale);
   }, []);
 
+  const resolveTemplateComponent = (templateId) => {
+    // Map extended / Canva template IDs to their base component
+    const templateMap = {
+      // Direct base templates
+      'classic': 'classic',
+      'modern': 'modern',
+      'creative': 'creative',
+      'minimal': 'minimal',
+      'executive': 'executive',
+      // Extended templates — map to best-matching base
+      'tech-minimal': 'modern',        // Silicon Valley → Modern sidebar
+      'nordic-clean': 'minimal',       // Nordic → Minimal clean
+      'ivy-league': 'classic',         // Ivy League → Classic serif
+      'compact-grid': 'modern',        // Compact → Modern two-column
+      'infographic-slate': 'creative', // Infographic → Creative bold
+      'corporate-gold': 'executive',   // Corporate Gold → Executive
+      // Canva templates
+      'canva-pro-gradient': 'creative',      // Gradient → Creative bold
+      'canva-minimal-tech': 'modern',        // Silicon Minimal → Modern
+      'canva-creative-portfolio': 'creative', // Creative Studio → Creative
+      'canva-executive-prestige': 'executive', // Executive Prestige → Executive
+    };
+    return templateMap[templateId] || 'classic';
+  };
+
   const renderTemplate = () => {
     const props = { sections: resume.sections, colors };
+    const base = resolveTemplateComponent(resume.templateId);
 
-    switch (resume.templateId) {
+    switch (base) {
       case 'modern':
         return <ModernTemplate {...props} />;
       case 'creative':
