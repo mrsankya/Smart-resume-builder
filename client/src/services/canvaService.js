@@ -8,13 +8,13 @@ export const getCanvaAuthUrl = async (redirectUri) => {
   const response = await API.get('/canva/auth-url', {
     params: { redirectUri },
   });
-  return response.data;
+  return response;
 };
 
 export const getCanvaDesigns = async (token) => {
   const headers = token ? { 'x-canva-token': token } : {};
   const response = await API.get('/canva/designs', { headers });
-  return response.data.data;
+  return response.data || response;
 };
 
 export const importCanvaDesign = async ({ designId, title, category, description, canvaToken }) => {
@@ -25,5 +25,5 @@ export const importCanvaDesign = async ({ designId, title, category, description
     description,
     canvaToken,
   });
-  return response.data;
+  return response.data || response;
 };
