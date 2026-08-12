@@ -1,14 +1,20 @@
 // ============================================
 // server.js - Entry Point
 // ============================================
-// Loads environment variables, connects to MongoDB,
-// and starts the Express server.
-// ============================================
 
-import "dotenv/config"; // Environment variable loading (Node.js: Server Setup)
+import { config } from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
+
+// Explicitly resolve .env path relative to this file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+config({ path: resolve(__dirname, ".env") });
+
 import app from "./src/app.js";
 import connectDB from "./src/config/db.config.js";
 import seedAdminUser from "./src/config/seedAdmin.js";
+
 
 const PORT = process.env.PORT || 5000;
 
