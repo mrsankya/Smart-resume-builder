@@ -12,24 +12,19 @@ import { errorHandler, notFoundHandler } from './middleware/error.middleware.js'
 
 const app = express(); // Express app instance (Express.js: Application Setup)
 
-// --- Middleware ---
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, Postman, server-to-server)
-    if (!origin) return callback(null, true);
-    return callback(null, true); // Allow all origins for tunnel & Canva access
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-}));
-
-// Allow iframe embedding for Canva & custom integrations
+// --- Dynamic CORS & Security Middleware ---
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With', 'Accept');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, x-canva-token');
   res.setHeader('Content-Security-Policy', "frame-ancestors 'self' https://*.canva.com https://canva.com;");
+
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
