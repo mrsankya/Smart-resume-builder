@@ -1,9 +1,24 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Playfair+Display:wght@600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
 @import "tailwindcss";
 
 /* ============================================
-   Smart Resume Builder - Modern SaaS Design System
+   Smart Resume Builder - Luminous Dark Design System
    ============================================ */
+
+:root {
+  --bg-base: #0b1326;
+  --bg-surface: #131b2e;
+  --bg-surface-elevated: #171f33;
+  --bg-surface-high: #222a3d;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-focus: #7c3aed;
+  --primary-violet: #7c3aed;
+  --primary-glow: #d2bbff;
+  --emerald-accent: #10b981;
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+}
 
 * {
   margin: 0;
@@ -13,6 +28,7 @@
 
 html {
   scroll-behavior: smooth;
+  color-scheme: dark;
 }
 
 body {
@@ -20,8 +36,13 @@ body {
   font-weight: 400;
   font-size: 15px;
   line-height: 1.6;
-  color: #1e1b4b;
-  background-color: #fcfaff;
+  color: var(--text-primary);
+  background-color: var(--bg-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: rgba(124, 58, 237, 0.35);
+  color: #ffffff;
 }
