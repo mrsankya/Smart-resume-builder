@@ -6,6 +6,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 32px;
+  animation: fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) both;
 }
 .resume-card {
   background: #ffffff;
@@ -13,7 +14,26 @@
   border-radius: 14px;
   cursor: pointer;
   overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) both;
+  position: relative;
 }
+.resume-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(124,58,237,0.12);
+  border-color: #c084fc;
+}
+.resume-card::after {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #7c3aed, #9333ea);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 0 2px 2px 0;
+}
+.resume-card:hover::after { opacity: 1; }
 .resume-card-bar { height: 4px; }
 .resume-card-body { padding: 20px; }
 .resume-card-score-bar {

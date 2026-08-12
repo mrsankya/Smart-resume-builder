@@ -33,6 +33,10 @@
   color: #ffffff;
   font-size: 18px;
   box-shadow: 0 0 16px rgba(124, 58, 237, 0.4);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.navbar-brand:hover .navbar-logo {
+  transform: scale(1.1) rotate(5deg);
 }
 .navbar-title {
   font-family: "Plus Jakarta Sans", sans-serif;
@@ -63,10 +67,23 @@
   padding: 6px 12px;
   border-radius: 8px;
   transition: all 0.2s ease;
+  position: relative;
 }
 .nav-link:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.06);
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 50%;
+  width: 0%; height: 2px;
+  background: #d2bbff;
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+.nav-link:hover::after {
+  width: 60%;
 }
 .nav-link-active {
   color: #d2bbff !important;
