@@ -9,7 +9,7 @@ import { verifyToken } from '../utils/jwt.utils.js';
 import User from '../models/User.model.js';
 
 // JWT verification middleware (Express.js: Auth Middleware)
-const authenticate = async (req, res, next) => {
+export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -38,6 +38,9 @@ const authenticate = async (req, res, next) => {
       success: false,
       message: 'Invalid or expired token. Please log in again.',
     });
+  }
+};
+
 // Optional JWT verification middleware
 export const optionalAuth = async (req, res, next) => {
   try {
@@ -54,5 +57,4 @@ export const optionalAuth = async (req, res, next) => {
   next();
 };
 
-export { authenticate };
 export default authenticate;
