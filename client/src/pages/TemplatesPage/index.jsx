@@ -4,13 +4,18 @@
 
 import './index.css';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
 import TemplateCard, { SAMPLE_DATA } from '../../components/TemplateCard';
 import BUILTIN_TEMPLATES from '../../constants/templates.js';
 import { createResume } from '../../services/resumeService.js';
 import { getLiveTemplates, submitCustomTemplate } from '../../services/templateService.js';
+import {
+  getCanvaAuthUrl,
+  getCanvaDesigns,
+  importCanvaDesign,
+} from '../../services/canvaService.js';
 import ClassicTemplate from '../../components/templates/ClassicTemplate.jsx';
 import ModernTemplate from '../../components/templates/ModernTemplate.jsx';
 import CreativeTemplate from '../../components/templates/CreativeTemplate.jsx';
@@ -24,6 +29,8 @@ import {
   HiArrowUpTray,
   HiDocumentArrowUp,
   HiCheckCircle,
+  HiArrowPath,
+  HiArrowTopRightOnSquare,
 } from 'react-icons/hi2';
 
 const TEMPLATE_COMPONENTS = {
@@ -44,6 +51,7 @@ const CATEGORIES = ['All', 'Professional', 'Modern', 'Creative', 'Minimal', 'Exe
 
 function TemplatesPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [allTemplates, setAllTemplates] = useState(BUILTIN_TEMPLATES);
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,9 +78,93 @@ function TemplatesPage() {
   const [customFile, setCustomFile] = useState(null);
   const [customTags, setCustomTags] = useState('');
 
+  // Canva Import Modal State
+  const [showCanvaModal, setShowCanvaModal] = useState(false);
+  const [canvaToken, setCanvaToken] = useState(() => localStorage.getItem('canva_token') || '');
+  const [canvaDesigns, setCanvaDesigns] = useState([]);
+  const [isLoadingCanva, setIsLoadingCanva] = useState(false);
+  const [selectedCanvaDesign, setSelectedCanvaDesign] = useState(null);
+  const [canvaImportCategory, setCanvaImportCategory] = useState('Creative');
+  const [isImportingFromCanva, setIsImportingFromCanva] = useState(false);
+
   useEffect(() => {
     fetchCommunityTemplates();
+
+    // Check if redirected back from Canva OAuth
+    const connected = searchParams.get('canva_connected');
+    const token = searchParams.get('canva_token');
+    const error = searchParams.get('canva_error');
+
+    if (error) {
+      toast.error(`Canva connection error: ${error}`);
+      searchParams.delete('canva_error');
+      setSearchParams(searchParams);
+    }
+
+    if (connected && token) {
+      setCanvaToken(token);
+      localStorage.setItem('canva_token', token);
+      toast.success('🎨 Canva connected successfully!');
+      setShowCanvaModal(true);
+      fetchCanvaDesigns(token);
+      searchParams.delete('canva_connected');
+      searchParams.delete('canva_token');
+      setSearchParams(searchParams);
+    }
   }, []);
+
+  const fetchCanvaDesigns = async (token = canvaToken) => {
+    if (!token) return;
+    setIsLoadingCanva(true);
+    try {
+      const designs = await getCanvaDesigns(token);
+      setCanvaDesigns(designs || []);
+    } catch (err) {
+      console.warn('Canva token may have expired:', err);
+      setCanvaToken('');
+      localStorage.removeItem('canva_token');
+    } finally {
+      setIsLoadingCanva(false);
+    }
+  };
+
+  const handleConnectCanva = async () => {
+    try {
+      const res = await getCanvaAuthUrl();
+      if (res.url) {
+        window.location.href = res.url;
+      }
+    } catch (err) {
+      toast.error('Failed to initialize Canva connection. Please ensure Canva Client ID is set.');
+    }
+  };
+
+  const handleImportCanvaDesign = async () => {
+    if (!selectedCanvaDesign) {
+      toast.error('Please select a Canva design to import');
+      return;
+    }
+
+    setIsImportingFromCanva(true);
+    try {
+      await importCanvaDesign({
+        designId: selectedCanvaDesign.id,
+        title: selectedCanvaDesign.title || 'Canva Resume Template',
+        category: canvaImportCategory,
+        canvaToken,
+      });
+
+      toast.success('🎉 Canva template successfully imported!');
+      setShowCanvaModal(false);
+      setSelectedCanvaDesign(null);
+      fetchCommunityTemplates();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to import Canva design');
+    } finally {
+      setIsImportingFromCanva(false);
+    }
+  };
 
   const fetchCommunityTemplates = async () => {
     try {
@@ -186,13 +278,32 @@ function TemplatesPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="btn btn-primary-gradient"
-            style={{ padding: '14px 28px', whiteSpace: 'nowrap' }}
-          >
-            <HiArrowUpTray style={{ fontSize: '18px' }} /> Upload Custom Template
-          </button>
+          <div className="flex-row items-center gap-sm">
+            <button
+              onClick={() => {
+                setShowCanvaModal(true);
+                if (canvaToken) fetchCanvaDesigns(canvaToken);
+              }}
+              className="btn btn-outline"
+              style={{
+                borderColor: '#00c4cc',
+                color: '#00c4cc',
+                padding: '14px 22px',
+                whiteSpace: 'nowrap',
+                background: 'rgba(0, 196, 204, 0.08)',
+              }}
+            >
+              🎨 Import from Canva
+            </button>
+
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="btn btn-primary-gradient"
+              style={{ padding: '14px 28px', whiteSpace: 'nowrap' }}
+            >
+              <HiArrowUpTray style={{ fontSize: '18px' }} /> Upload Custom Template
+            </button>
+          </div>
         </div>
 
         {/* Filter and Search Controls */}
@@ -546,6 +657,193 @@ function TemplatesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: CANVA INTEGRATION & IMPORT MODAL */}
+      {showCanvaModal && (
+        <div className="modal-overlay" onClick={() => setShowCanvaModal(false)}>
+          <div
+            className="modal-content"
+            style={{ maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex-between mb-md">
+              <div className="flex-row items-center gap-sm">
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: 'linear-gradient(135deg, #00c4cc, #7d2ae8)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ffffff',
+                    fontWeight: '800',
+                    fontSize: '18px',
+                  }}
+                >
+                  C
+                </div>
+                <div>
+                  <h2 className="heading-md">Canva Template Importer</h2>
+                  <p className="text-xs text-muted">
+                    Sync and fetch resume templates directly from your Canva workspace
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setShowCanvaModal(false)} className="btn-icon btn-ghost">
+                <HiXMark style={{ fontSize: '20px' }} />
+              </button>
+            </div>
+
+            {!canvaToken ? (
+              <div className="text-center" style={{ padding: '36px 20px' }}>
+                <div
+                  style={{
+                    width: '72px',
+                    height: '72px',
+                    borderRadius: '20px',
+                    background: 'rgba(0, 196, 204, 0.12)',
+                    border: '1px solid rgba(0, 196, 204, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 20px',
+                    fontSize: '32px',
+                    color: '#00c4cc',
+                  }}
+                >
+                  🎨
+                </div>
+                <h3 className="heading-sm mb-xs">Connect Your Canva Account</h3>
+                <p className="text-muted text-sm mb-lg" style={{ maxWidth: '440px', margin: '0 auto 24px' }}>
+                  Authorize Smart Resume Builder to browse your Canva resume designs and export them directly into your template library.
+                </p>
+
+                <button
+                  onClick={handleConnectCanva}
+                  className="btn btn-primary-gradient"
+                  style={{
+                    background: 'linear-gradient(135deg, #00c4cc, #7d2ae8)',
+                    padding: '14px 36px',
+                    fontSize: '15px',
+                  }}
+                >
+                  Connect with Canva OAuth <HiArrowTopRightOnSquare />
+                </button>
+
+                <div className="mt-lg p-sm rounded-md" style={{ background: '#171f33', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <p className="text-xs text-muted">
+                    💡 <strong>Pro Tip:</strong> You can also export any template from Canva as a <strong>PDF / Word (.docx)</strong> file and upload it using our <strong>Upload Custom Template</strong> button!
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex-between mb-md">
+                  <span className="text-xs text-muted">
+                    Connected to Canva • Showing resume designs
+                  </span>
+                  <button
+                    onClick={() => fetchCanvaDesigns(canvaToken)}
+                    disabled={isLoadingCanva}
+                    className="btn btn-ghost btn-xs text-purple"
+                  >
+                    <HiArrowPath /> Refresh Designs
+                  </button>
+                </div>
+
+                {isLoadingCanva ? (
+                  <div className="flex-center" style={{ padding: '48px 0' }}>
+                    <div className="spinner" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid-2 gap-sm mb-md">
+                      {canvaDesigns.map((design) => (
+                        <div
+                          key={design.id}
+                          onClick={() => setSelectedCanvaDesign(design)}
+                          style={{
+                            padding: '14px',
+                            borderRadius: '12px',
+                            background: selectedCanvaDesign?.id === design.id ? 'rgba(124, 58, 237, 0.2)' : '#171f33',
+                            border: `1px solid ${selectedCanvaDesign?.id === design.id ? '#7c3aed' : 'rgba(255,255,255,0.08)'}`,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
+                          {design.thumbnail?.url && (
+                            <img
+                              src={design.thumbnail.url}
+                              alt={design.title}
+                              style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }}
+                            />
+                          )}
+                          <div className="font-semibold text-white text-sm truncate">{design.title || 'Untitled Resume'}</div>
+                          <div className="text-xs text-muted mt-xs">Updated {new Date(design.updated_at || Date.now()).toLocaleDateString()}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {canvaDesigns.length === 0 && (
+                      <div className="text-center" style={{ padding: '32px 16px' }}>
+                        <p className="text-muted text-sm mb-md">
+                          No resume designs found in your Canva account. Create a resume on Canva or export it as PDF/DOCX.
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedCanvaDesign && (
+                      <div className="p-md rounded-md mb-md" style={{ background: '#171f33', border: '1px solid #7c3aed' }}>
+                        <h4 className="text-sm font-semibold text-white mb-xs">
+                          Selected: {selectedCanvaDesign.title}
+                        </h4>
+                        <div className="form-group mb-xs">
+                          <label className="label-text">Assign Category</label>
+                          <select
+                            value={canvaImportCategory}
+                            onChange={(e) => setCanvaImportCategory(e.target.value)}
+                            className="input-field"
+                          >
+                            <option value="Creative">Creative & Design</option>
+                            <option value="Tech">Tech & Engineering</option>
+                            <option value="Executive">Executive & Leadership</option>
+                            <option value="Modern">Modern Minimalist</option>
+                            <option value="General">General Purpose</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex-row gap-sm mt-lg">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCanvaToken('');
+                          localStorage.removeItem('canva_token');
+                        }}
+                        className="btn btn-outline btn-sm"
+                      >
+                        Disconnect Canva
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleImportCanvaDesign}
+                        disabled={!selectedCanvaDesign || isImportingFromCanva}
+                        className="btn btn-primary-gradient"
+                        style={{ flex: 1 }}
+                      >
+                        {isImportingFromCanva ? 'Exporting & Importing...' : 'Import Selected Template'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
