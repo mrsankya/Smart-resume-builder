@@ -7,7 +7,6 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js"
-
   },
   "dependencies": {
     "@google/genai": "1.44.0",
@@ -20,6 +19,7 @@
     "express": "5.2.1",
     "google-auth-library": "10.6.1",
     "jsonwebtoken": "9.0.3",
+    "mammoth": "^1.12.1",
     "mongoose": "9.2.4",
     "multer": "1.4.5-lts.1",
     "pdfjs-dist": "4.4.168",
