@@ -3,11 +3,17 @@
 // ============================================
 // Reference: fetch(), async/await - reference-javascript.md
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (typeof window !== 'undefined' && window.location.hostname.includes('trycloudflare.com')) {
+    return 'https://campbell-markets-mil-one.trycloudflare.com/api';
+  }
+  return 'http://localhost:5000/api';
+};
 
 const fetchApi = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token');
-  const headers = { ...options.headers };
+  const headers = { ...(options.headers || {}) };
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -18,7 +24,17 @@ const fetchApi = async (endpoint, options = {}) => {
     headers['Content-Type'] = 'application/json';
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  let finalUrl = `${getBaseUrl()}${endpoint}`;
+  if (options.params) {
+    const searchParams = new URLSearchParams();
+    Object.entries(options.params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) searchParams.append(k, v);
+    });
+    const qs = searchParams.toString();
+    if (qs) finalUrl += `?${qs}`;
+  }
+
+  const response = await fetch(finalUrl, {
     ...options,
     headers,
   });
@@ -35,20 +51,23 @@ const fetchApi = async (endpoint, options = {}) => {
 };
 
 const API = {
-  get: (endpoint) => fetchApi(endpoint),
+  get: (endpoint, options = {}) => fetchApi(endpoint, { method: 'GET', ...options }),
 
-  post: (endpoint, body) => fetchApi(endpoint, {
+  post: (endpoint, body, options = {}) => fetchApi(endpoint, {
     method: 'POST',
     body: body instanceof FormData ? body : JSON.stringify(body),
+    ...options,
   }),
 
-  put: (endpoint, body) => fetchApi(endpoint, {
+  put: (endpoint, body, options = {}) => fetchApi(endpoint, {
     method: 'PUT',
     body: JSON.stringify(body),
+    ...options,
   }),
 
-  delete: (endpoint) => fetchApi(endpoint, {
+  delete: (endpoint, options = {}) => fetchApi(endpoint, {
     method: 'DELETE',
+    ...options,
   }),
 };
 
