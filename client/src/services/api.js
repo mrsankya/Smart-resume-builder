@@ -4,11 +4,13 @@
 // Reference: fetch(), async/await - reference-javascript.md
 
 const getBaseUrl = () => {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-  if (typeof window !== 'undefined' && window.location.hostname.includes('trycloudflare.com')) {
-    return 'https://campbell-markets-mil-one.trycloudflare.com/api';
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      return 'https://campbell-markets-mil-one.trycloudflare.com/api';
+    }
   }
-  return 'http://localhost:5000/api';
+  return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 };
 
 const fetchApi = async (endpoint, options = {}) => {

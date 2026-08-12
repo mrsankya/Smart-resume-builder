@@ -50,9 +50,39 @@ export default function CreateResumeModal({ isOpen, onClose, initialTemplateId =
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    const token = localStorage.getItem('token');
+    const resumeTitle = title.trim() || `${currentTemplateObj.name} Resume`;
+
+    if (!token) {
+      // Guest Mode: Store local draft and open builder immediately
+      const guestDraft = {
+        _id: 'guest-draft',
+        title: resumeTitle,
+        templateId: selectedTemplate,
+        targetRole: targetRole.trim(),
+        sections: {
+          personalInfo: { fullName: '', email: '', phone: '', location: '', title: targetRole.trim(), summary: '' },
+          experience: [],
+          education: [],
+          skills: [],
+          projects: [],
+          certifications: [],
+          custom: [],
+        },
+        isGuest: true,
+        updatedAt: new Date().toISOString(),
+      };
+      localStorage.setItem('guest_resume_draft', JSON.stringify(guestDraft));
+      toast.success('🚀 Started building in Guest Mode!');
+      onClose();
+      navigate('/builder/guest-draft');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const resume = await createResume({
-        title: title.trim() || `${currentTemplateObj.name} Resume`,
+        title: resumeTitle,
         templateId: selectedTemplate,
         targetRole: targetRole.trim(),
       });
